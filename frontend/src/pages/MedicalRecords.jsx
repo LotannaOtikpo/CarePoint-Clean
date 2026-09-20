@@ -19,13 +19,17 @@ export default function MedicalRecords() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [patients, setPatients] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!canEdit) return;
     client.get('/patients', { params: { per_page: 100 } }).then(({ data }) => setPatients(data.data ?? []));
-  }, [canEdit]);
+    if (isAdmin) {
+      client.get('/doctors', { params: { per_page: 100 } }).then(({ data }) => setDoctors(data.data ?? []));
+    }
+  }, [canEdit, isAdmin]);
 
   // Fetch appointments when patient is selected to auto-populate doctor and date
   useEffect(() => {
@@ -39,8 +43,8 @@ export default function MedicalRecords() {
         if (lastAppt) {
           setForm((prevForm) => ({
             ...prevForm,
-            doctor_id: lastAppt.doctor_id || '',
-            record_date: lastAppt.appointment_date?.slice(0, 10) || '',
+            doctor_id: prevForm.doctor_id || lastAppt.doctor_id || '',
+            record_date: prevForm.record_date || lastAppt.appointment_date?.slice(0, 10) || '',
           }));
         }
       })
@@ -141,10 +145,18 @@ export default function MedicalRecords() {
                       {patients.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
                     </select></div>
                   {form.patient_id && (
-                    <>
-                      <div className="full"><label>Doctor (Auto-filled from appointment)</label>
-                        <input type="text" value={appointments.find(a => a.doctor_id === form.doctor_id)?.doctor?.user?.name || 'Loading...'} readOnly className="input-readonly" /></div>
-                    </>
+                    <div className="full"><label>Attending doctor *</label>
+                      {isAdmin ? (
+                        <select value={form.doctor_id} required onChange={set('doctor_id')}>
+                          <option value="">Select doctor…</option>
+                          {doctors.map((d) => <option key={d.id} value={d.id}>Dr. {d.user?.name || d.name}</option>)}
+                        </select>
+                      ) : (
+                        <input type="text"
+                          value={appointments.find(a => String(a.doctor_id) === String(form.doctor_id))?.doctor?.user?.name || user.name || 'Current Doctor'}
+                          readOnly className="input-readonly" />
+                      )}
+                    </div>
                   )}
                 </>
               )}

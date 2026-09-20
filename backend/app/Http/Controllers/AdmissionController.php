@@ -13,8 +13,8 @@ class AdmissionController extends Controller
         $user = $request->user();
 
         return Admission::with(['patient:id,code,name', 'doctor.user:id,name'])
-            ->when($user->role === User::ROLE_DOCTOR, fn ($q) => $q->where('doctor_id', $user->doctor->id))
-            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient->id))
+            ->when($user->role === User::ROLE_DOCTOR, fn ($q) => $q->where('doctor_id', $user->doctor?->id))
+            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient?->id))
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->latest('admitted_at')
             ->paginate($request->integer('per_page', 15));

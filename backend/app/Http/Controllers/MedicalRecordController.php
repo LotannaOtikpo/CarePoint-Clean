@@ -13,8 +13,8 @@ class MedicalRecordController extends Controller
         $user = $request->user();
 
         return MedicalRecord::with(['patient:id,code,name', 'doctor.user:id,name'])
-            ->when($user->role === User::ROLE_DOCTOR, fn ($q) => $q->where('doctor_id', $user->doctor->id))
-            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient->id))
+            ->when($user->role === User::ROLE_DOCTOR, fn ($q) => $q->where('doctor_id', $user->doctor?->id))
+            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient?->id))
             ->when($request->query('patient_id'), fn ($q, $id) => $q->where('patient_id', $id))
             ->latest('record_date')
             ->paginate($request->integer('per_page', 15));
@@ -36,6 +36,9 @@ class MedicalRecordController extends Controller
 
         // Doctors author records as themselves; admin must specify.
         if ($user->role === User::ROLE_DOCTOR) {
+            if (! $user->doctor) {
+                return response()->json(['message' => 'Doctor profile not found.'], 422);
+            }
             $data['doctor_id'] = $user->doctor->id;
         } else {
             $data['doctor_id'] = $request->validate(['doctor_id' => ['required', 'exists:doctors,id']])['doctor_id'];
@@ -60,7 +63,7 @@ class MedicalRecordController extends Controller
     public function update(Request $request, MedicalRecord $medicalRecord)
     {
         $user = $request->user();
-        if ($user->role === User::ROLE_DOCTOR && $medicalRecord->doctor_id !== $user->doctor->id) {
+        if ($user->role === User::ROLE_DOCTOR && $medicalRecord->doctor_id !== $user->doctor?->id) {
             return response()->json(['message' => 'You can only edit your own records.'], 403);
         }
 

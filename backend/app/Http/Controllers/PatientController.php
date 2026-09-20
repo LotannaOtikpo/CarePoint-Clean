@@ -28,10 +28,11 @@ class PatientController extends Controller
 
         $patient = DB::transaction(function () use ($data) {
             // 1. Create a User account for the patient so they can log in
+            // User model has 'password' => 'hashed' cast, so pass plain text to avoid double hashing
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'] ?? ($data['phone'] ? $data['phone'].'@carepoint.local' : 'patient_'.time().'@carepoint.local'),
-                'password' => Hash::make($data['password'] ?? 'password123'),
+                'password' => $data['password'] ?? 'password123',
                 'role' => User::ROLE_PATIENT,
                 'phone' => $data['phone'] ?? null,
                 'is_active' => true,
@@ -62,19 +63,19 @@ class PatientController extends Controller
 
         DB::transaction(function () use ($data, $patient) {
             // 1. Update the linked User account to keep User Management in sync
-            if ($patient->user_id) {
+            if ($patient->user_id && $patient->user) {
                 $userData = [
                     'name' => $data['name'],
-                    'email' => $data['email'] ?? ($data['phone'] ? $data['phone'].'@carepoint.local' : $patient->user?->email),
+                    'email' => $data['email'] ?? ($data['phone'] ? $data['phone'].'@carepoint.local' : $patient->user->email),
                     'phone' => $data['phone'] ?? null,
                 ];
 
                 // Only update the password if a new one was provided
                 if (!empty($data['password'])) {
-                    $userData['password'] = Hash::make($data['password']);
+                    $userData['password'] = $data['password'];
                 }
 
-                User::where('id', $patient->user_id)->update($userData);
+                $patient->user->update($userData);
             }
 
             // 2. Update the Patient record (exclude password)

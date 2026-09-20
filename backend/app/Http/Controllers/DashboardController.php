@@ -45,7 +45,18 @@ class DashboardController extends Controller
 
     private function doctorStats(User $user): array
     {
-        $doctorId = $user->doctor->id;
+        $doctorId = $user->doctor?->id;
+
+        if (! $doctorId) {
+            return [
+                'appointments_today' => 0,
+                'appointments_pending' => 0,
+                'my_patients' => 0,
+                'records_written' => 0,
+                'prescriptions_written' => 0,
+                'todays_schedule' => [],
+            ];
+        }
 
         // Fetch today's schedule, including the doctor relation
         $schedule = Appointment::with(['patient:id,code,name', 'doctor.user:id,name'])
@@ -104,7 +115,17 @@ class DashboardController extends Controller
 
     private function patientStats(User $user): array
     {
-        $patientId = $user->patient->id;
+        $patientId = $user->patient?->id;
+
+        if (! $patientId) {
+            return [
+                'upcoming_appointments' => [],
+                'medical_records' => 0,
+                'prescriptions' => 0,
+                'bills_due' => 0.0,
+                'is_admitted' => false,
+            ];
+        }
 
         return [
             'upcoming_appointments' => Appointment::with('doctor.user:id,name')

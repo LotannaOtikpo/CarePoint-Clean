@@ -14,8 +14,8 @@ class PrescriptionController extends Controller
         $user = $request->user();
 
         return Prescription::with(['patient:id,code,name', 'doctor.user:id,name', 'items'])
-            ->when($user->role === User::ROLE_DOCTOR, fn ($q) => $q->where('doctor_id', $user->doctor->id))
-            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient->id))
+            ->when($user->role === User::ROLE_DOCTOR, fn ($q) => $q->where('doctor_id', $user->doctor?->id))
+            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient?->id))
             ->when($request->query('patient_id'), fn ($q, $id) => $q->where('patient_id', $id))
             ->latest('prescribed_date')
             ->paginate($request->integer('per_page', 15));
@@ -38,9 +38,14 @@ class PrescriptionController extends Controller
             'items.*.instructions' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $data['doctor_id'] = $user->role === User::ROLE_DOCTOR
-            ? $user->doctor->id
-            : $request->validate(['doctor_id' => ['required', 'exists:doctors,id']])['doctor_id'];
+        if ($user->role === User::ROLE_DOCTOR) {
+            if (! $user->doctor) {
+                return response()->json(['message' => 'Doctor profile not found.'], 422);
+            }
+            $data['doctor_id'] = $user->doctor->id;
+        } else {
+            $data['doctor_id'] = $request->validate(['doctor_id' => ['required', 'exists:doctors,id']])['doctor_id'];
+        }
 
         $prescription = DB::transaction(function () use ($data) {
             $prescription = Prescription::create(collect($data)->except('items')->all());
@@ -65,7 +70,7 @@ class PrescriptionController extends Controller
     public function update(Request $request, Prescription $prescription)
     {
         $user = $request->user();
-        if ($user->role === User::ROLE_DOCTOR && $prescription->doctor_id !== $user->doctor->id) {
+        if ($user->role === User::ROLE_DOCTOR && $prescription->doctor_id !== $user->doctor?->id) {
             return response()->json(['message' => 'You can only edit your own prescriptions.'], 403);
         }
 

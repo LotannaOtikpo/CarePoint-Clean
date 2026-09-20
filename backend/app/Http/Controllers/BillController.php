@@ -14,7 +14,7 @@ class BillController extends Controller
         $user = $request->user();
 
         return Bill::with(['patient:id,code,name', 'items'])
-            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient->id))
+            ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient?->id))
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->when($request->query('patient_id'), fn ($q, $id) => $q->where('patient_id', $id))
             ->latest('billed_at')
@@ -81,7 +81,10 @@ class BillController extends Controller
             return response()->json(['message' => "Bill is already {$bill->status}."], 422);
         }
 
-        $due = $bill->total - $bill->paid_amount;
+        $due = round((float) $bill->total - (float) $bill->paid_amount, 2);
+        if ($due <= 0) {
+            return response()->json(['message' => 'Bill has no outstanding due amount.'], 422);
+        }
 
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01', "max:{$due}"],

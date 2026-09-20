@@ -25,7 +25,8 @@ class AppointmentAvailability
     {
         $this->expireReservations();
 
-        $appointmentAt = Carbon::createFromFormat('Y-m-d H:i', "{$date} {$time}", self::BOOKING_TIMEZONE);
+        $timeShort = substr($time, 0, 5);
+        $appointmentAt = Carbon::createFromFormat('Y-m-d H:i', "{$date} {$timeShort}", self::BOOKING_TIMEZONE);
         if ($appointmentAt->lessThanOrEqualTo(Carbon::now(self::BOOKING_TIMEZONE))) {
             return 'Please choose a future appointment date and time.';
         }
@@ -40,13 +41,13 @@ class AppointmentAvailability
 
         $start = substr($slot->start_time, 0, 5);
         $end = substr($slot->end_time, 0, 5);
-        if ($time < $start || $time >= $end) {
+        if ($timeShort < $start || $timeShort >= $end) {
             return "Doctor is only available between {$slot->start_time} and {$slot->end_time} on that day.";
         }
 
         $taken = Appointment::where('doctor_id', $doctorId)
             ->whereDate('appointment_date', $date)
-            ->where('appointment_time', $time.':00')
+            ->where('appointment_time', $timeShort.':00')
             ->whereNotIn('status', ['cancelled'])
             ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
             ->exists();
