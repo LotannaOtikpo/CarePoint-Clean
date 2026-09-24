@@ -17,7 +17,7 @@ class UserController extends Controller
                 fn ($q) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%")
             ))
             ->latest()
-            ->paginate($request->integer('per_page', 15));
+            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
     }
 
     public function store(Request $request)
@@ -30,6 +30,12 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'is_active' => ['boolean'],
         ]);
+
+        if (in_array($data['role'], [User::ROLE_DOCTOR, User::ROLE_PATIENT], true)) {
+            return response()->json([
+                'message' => 'Create doctor and patient accounts through their dedicated management screens so the required profile is created too.',
+            ], 422);
+        }
 
         return response()->json(User::create($data), 201);
     }
@@ -54,7 +60,21 @@ class UserController extends Controller
             unset($data['password']);
         }
 
+        $roleChanged = array_key_exists('role', $data) && $data['role'] !== $user->role;
+        $hasClinicalRole = in_array($data['role'] ?? $user->role, [User::ROLE_DOCTOR, User::ROLE_PATIENT], true)
+            || in_array($user->role, [User::ROLE_DOCTOR, User::ROLE_PATIENT], true);
+
+        if ($roleChanged && $hasClinicalRole) {
+            return response()->json([
+                'message' => 'Doctor and patient roles are managed with their linked profiles and cannot be changed here.',
+            ], 422);
+        }
+
         $user->update($data);
+
+        if (array_key_exists('is_active', $data) && ! $data['is_active']) {
+            $user->tokens()->delete();
+        }
 
         return $user;
     }

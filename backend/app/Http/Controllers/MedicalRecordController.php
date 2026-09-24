@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MedicalRecord;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class MedicalRecordController extends Controller
 {
@@ -17,7 +18,7 @@ class MedicalRecordController extends Controller
             ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient?->id))
             ->when($request->query('patient_id'), fn ($q, $id) => $q->where('patient_id', $id))
             ->latest('record_date')
-            ->paginate($request->integer('per_page', 15));
+            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
     }
 
     public function store(Request $request)
@@ -44,6 +45,15 @@ class MedicalRecordController extends Controller
             $data['doctor_id'] = $request->validate(['doctor_id' => ['required', 'exists:doctors,id']])['doctor_id'];
         }
 
+        if (! empty($data['appointment_id'])) {
+            $appointment = \App\Models\Appointment::findOrFail($data['appointment_id']);
+            if ($appointment->patient_id !== (int) $data['patient_id'] || $appointment->doctor_id !== (int) $data['doctor_id']) {
+                throw ValidationException::withMessages([
+                    'appointment_id' => 'The appointment must belong to the selected patient and doctor.',
+                ]);
+            }
+        }
+
         return response()->json(
             MedicalRecord::create($data)->load(['patient:id,code,name', 'doctor.user:id,name']),
             201
@@ -54,6 +64,9 @@ class MedicalRecordController extends Controller
     {
         $user = $request->user();
         if ($user->role === User::ROLE_PATIENT && $medicalRecord->patient_id !== $user->patient?->id) {
+            abort(403);
+        }
+        if ($user->role === User::ROLE_DOCTOR && $medicalRecord->doctor_id !== $user->doctor?->id) {
             abort(403);
         }
 
@@ -82,6 +95,11 @@ class MedicalRecordController extends Controller
 
     public function destroy(MedicalRecord $medicalRecord)
     {
+        $user = request()->user();
+        if ($user->role === User::ROLE_DOCTOR && $medicalRecord->doctor_id !== $user->doctor?->id) {
+            abort(403);
+        }
+
         $medicalRecord->delete();
 
         return response()->json(['message' => 'Medical record deleted.']);

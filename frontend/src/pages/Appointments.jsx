@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Download, Banknote, Loader2, Edit3 } from 'lucide-react';
+import { Loader2, Edit3 } from 'lucide-react';
 import client from '../api/client';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
@@ -9,12 +9,6 @@ import { formatTime, formatTimeRange } from '../utils/dateTime';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-const formatCurrency = (amount, currency = 'NGN') => new Intl.NumberFormat('en-NG', {
-  style: 'currency',
-  currency,
-  minimumFractionDigits: 2,
-}).format(Number(amount || 0));
 
 const toLocalDate = (date) => {
   const year = date.getFullYear();
@@ -59,8 +53,6 @@ export default function Appointments() {
   const [error, setError] = useState('');
   const [clock, setClock] = useState(Date.now());
   const [submitting, setSubmitting] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [paymentResult, setPaymentResult] = useState(null);
 
   useEffect(() => {
     client.get('/doctors', { params: { per_page: 100 } }).then(({ data }) => setDoctors(data.data ?? []));
@@ -180,9 +172,8 @@ export default function Appointments() {
   };
 
   const closeBooking = () => {
-    if (submitting || checkoutOpen) return;
+    if (submitting) return;
     setBooking(false);
-    setPaymentResult(null);
     setError('');
     setForm({ patient_id: '', doctor_id: '', appointment_date: '', appointment_time: '', reason: '' });
   };
@@ -190,7 +181,6 @@ export default function Appointments() {
   const openBooking = () => {
     setClock(Date.now());
     setError('');
-    setPaymentResult(null);
     setBooking(true);
   };
 
@@ -369,24 +359,8 @@ export default function Appointments() {
       )}
 
       {booking && (
-        <Modal title={paymentResult ? 'Appointment confirmed' : 'Book Appointment'} onClose={closeBooking}>
-          {paymentResult ? (
-            <div className="payment-success">
-              <div className="payment-success-icon"><CheckCircle2 size={31} /></div>
-              <span className="payment-success-kicker">Booking successful</span>
-              <h3>Your appointment is confirmed</h3>
-              <p>Your appointment has been successfully booked.</p>
-
-              <div className="payment-result-card">
-                <div><span>Doctor</span><strong>{paymentResult.appointment?.doctor?.user?.name}</strong></div>
-                <div><span>Appointment</span><strong>{paymentResult.appointment?.appointment_date?.slice(0, 10)} · {formatTime(paymentResult.appointment?.appointment_time)}</strong></div>
-              </div>
-
-              <div className="payment-success-actions">
-                <button type="button" className="btn" onClick={closeBooking}>Done</button>
-              </div>
-            </div>
-          ) : <form onSubmit={book}>
+        <Modal title="Book Appointment" onClose={closeBooking}>
+          <form onSubmit={book}>
             <div className="form-grid">
               {isStaff && (
                 <div className="full"><label>Patient *</label>
@@ -418,14 +392,7 @@ export default function Appointments() {
                 </div>
               )}
               {user.role === 'patient' && selectedDoctor && (
-                <div className="full payment-summary">
-                  <div className="payment-summary-icon"><Banknote size={20} /></div>
-                  <div className="payment-summary-copy">
-                    <span>Consultation fee</span>
-                    <strong>{formatCurrency(selectedDoctor.consultation_fee)}</strong>
-                    <small>Standard consultation rates apply.</small>
-                  </div>
-                </div>
+                <div className="full booking-note">Payment will be made at the hospital.</div>
               )}
               <div><label>Date *</label><input type="date" value={form.appointment_date} min={minimumDate}
                 disabled={!selectedDoctor || availableSlots.length === 0} required onChange={setAppointmentDate} /></div>
@@ -447,7 +414,7 @@ export default function Appointments() {
                 {submitting ? 'Booking…' : 'Book Appointment'}
               </button>
             </div>
-          </form>}
+          </form>
         </Modal>
       )}
     </>

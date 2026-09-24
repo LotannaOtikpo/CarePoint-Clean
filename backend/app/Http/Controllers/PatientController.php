@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
+use App\Models\Appointment;
+use App\Models\MedicalRecord;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class PatientController extends Controller
 {
@@ -19,7 +21,7 @@ class PatientController extends Controller
                     ->orWhere('phone', 'like', "%{$s}%")
             ))
             ->latest()
-            ->paginate($request->integer('per_page', 15));
+            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
     }
 
     public function store(Request $request)
@@ -51,6 +53,18 @@ class PatientController extends Controller
 
     public function show(Patient $patient)
     {
+        $user = request()->user();
+        if ($user->role === User::ROLE_DOCTOR) {
+            $hasAssignment = Appointment::where('patient_id', $patient->id)
+                ->where('doctor_id', $user->doctor?->id)
+                ->exists()
+                || MedicalRecord::where('patient_id', $patient->id)
+                    ->where('doctor_id', $user->doctor?->id)
+                    ->exists();
+
+            abort_unless($hasAssignment, 403, 'Not authorized for this patient.');
+        }
+
         return $patient->load([
             'appointments.doctor.user', 'admissions.doctor.user',
             'medicalRecords.doctor.user', 'bills',
@@ -59,7 +73,7 @@ class PatientController extends Controller
 
     public function update(Request $request, Patient $patient)
     {
-        $data = $this->validated($request);
+        $data = $this->validated($request, $patient);
 
         DB::transaction(function () use ($data, $patient) {
             // 1. Update the linked User account to keep User Management in sync
@@ -98,7 +112,7 @@ class PatientController extends Controller
         return response()->json(['message' => 'Patient deleted.']);
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Patient $patient = null): array
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -106,7 +120,11 @@ class PatientController extends Controller
             'gender' => ['nullable', 'in:male,female,other'],
             'blood_group' => ['nullable', 'string', 'max:5'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'email' => ['nullable', 'email'],
+            'email' => [
+                'nullable',
+                'email',
+                Rule::unique('users', 'email')->ignore($patient?->user_id),
+            ],
             'address' => ['nullable', 'string'],
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:30'],

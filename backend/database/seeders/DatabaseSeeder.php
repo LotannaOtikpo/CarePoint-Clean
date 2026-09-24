@@ -19,25 +19,25 @@ class DatabaseSeeder extends Seeder
         // ---- Staff accounts (password for all demo users: "password") ----
         User::create([
             'name' => 'System Admin',
-            'email' => 'admin@hms.test',
-            'password' => 'password',
+            'email' => 'admin@carepoint.com',
+            'password' => 'carepoint123',
             'role' => User::ROLE_ADMIN,
         ]);
 
         User::create([
-            'name' => 'Rina Das',
-            'email' => 'reception@hms.test',
+            'name' => 'Fatima Bello',
+            'email' => 'receptionist@carepoint.com',
             'password' => 'password',
             'role' => User::ROLE_RECEPTIONIST,
         ]);
 
-        // ---- Doctors ----
+        // ---- Doctors (Nigerian Names & @carepoint.com emails) ----
         $doctorsData = [
-            ['Dr. Anil Sharma', 'anil@hms.test', 'Cardiology', 'MD, DM', 800],
-            ['Dr. Priya Menon', 'priya@hms.test', 'Pediatrics', 'MD', 600],
-            ['Dr. Rahul Bose', 'rahul@hms.test', 'Orthopedics', 'MS', 700],
-            ['Dr. Sneha Kapoor', 'sneha@hms.test', 'Dermatology', 'MD', 500],
-            ['Dr. Vikram Verma', 'vikram@hms.test', 'Neurology', 'DM, DNB', 1000],
+            ['Dr. Chukwuma Okafor', 'chukwuma.okafor@carepoint.com', 'Cardiology', 'MBBS, FMCP', 15000],
+            ['Dr. Amina Ibrahim', 'amina.ibrahim@carepoint.com', 'Pediatrics', 'MBBS, FWACP', 10000],
+            ['Dr. Olumide Adeleke', 'olumide.adeleke@carepoint.com', 'Orthopedics', 'MBBS, FWACS', 12500],
+            ['Dr. Ngozi Eze', 'ngozi.eze@carepoint.com', 'Dermatology', 'MBBS, FMCPath', 10000],
+            ['Dr. Tunde Bakare', 'tunde.bakare@carepoint.com', 'Neurology', 'MBBS, FMCP (Neurology)', 20000],
         ];
 
         $doctors = collect($doctorsData)->map(function ($d) {
@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
                 'specialization' => $d[2],
                 'qualification' => $d[3],
                 'consultation_fee' => $d[4],
-                'license_no' => 'LIC-'.rand(10000, 99999),
+                'license_no' => 'MLN-'.rand(10000, 99999),
             ]);
 
             // Mon-Fri, 09:00-17:00 availability
@@ -69,28 +69,28 @@ class DatabaseSeeder extends Seeder
         });
 
         // ---- Patients ----
-        // Create user accounts for some patients so they can log in
+        // Create user accounts for registered demo patients
         $patientUser1 = User::create([
-            'name' => 'Amit Roy',
-            'email' => 'patient@hms.test',
+            'name' => 'Emeka Okafor',
+            'email' => 'emeka.okafor@gmail.com',
             'password' => 'password',
             'role' => User::ROLE_PATIENT,
         ]);
 
         $patientUser2 = User::create([
-            'name' => 'Neha Gupta',
-            'email' => 'neha@hms.test',
+            'name' => 'Zainab Mohammed',
+            'email' => 'zainab.m@yahoo.com',
             'password' => 'password',
             'role' => User::ROLE_PATIENT,
         ]);
 
         $patientsData = [
-            ['Amit Roy', $patientUser1->id, 'male', 'B+'],
-            ['Neha Gupta', $patientUser2->id, 'female', 'A+'],
-            ['Sunita Devi', null, 'female', 'O+'],
-            ['Karan Mehta', null, 'male', 'A-'],
-            ['Rohan Das', null, 'male', 'AB+'],
-            ['Pooja Sharma', null, 'female', 'B-'],
+            ['Emeka Okafor', $patientUser1->id, 'male', 'O+'],
+            ['Zainab Mohammed', $patientUser2->id, 'female', 'A+'],
+            ['Blessing Adebayo', null, 'female', 'B+'],
+            ['Ibrahim Danjuma', null, 'male', 'O-'],
+            ['Chinedu Okoro', null, 'male', 'AB+'],
+            ['Aisha Lawal', null, 'female', 'A-'],
         ];
 
         $patients = collect($patientsData)->map(fn ($p) => Patient::create([
@@ -100,7 +100,7 @@ class DatabaseSeeder extends Seeder
             'gender' => $p[2],
             'blood_group' => $p[3],
             'dob' => now()->subYears(rand(18, 65))->toDateString(),
-            'phone' => '98'.rand(10000000, 99999999),
+            'phone' => '080'.rand(10000000, 99999999),
         ]));
 
         // ---- Workflow Data: Appointments ----
@@ -155,7 +155,7 @@ class DatabaseSeeder extends Seeder
         ]));
 
         // ---- Workflow Data: Medical Records & Prescriptions ----
-        // Record 1 (Amit Roy & Dr. Anil Sharma)
+        // Record 1 (Emeka Okafor & Dr. Chukwuma Okafor)
         $record1 = MedicalRecord::create([
             'patient_id' => $patients[0]->id,
             'doctor_id' => $doctors[0]->id,
@@ -176,7 +176,7 @@ class DatabaseSeeder extends Seeder
             ['medicine_name' => 'Aspirin', 'dosage' => '75mg', 'frequency' => '1-0-0', 'duration' => '30 days'],
         ]);
 
-        // Record 2 (Neha Gupta & Dr. Priya Menon)
+        // Record 2 (Zainab Mohammed & Dr. Amina Ibrahim)
         $record2 = MedicalRecord::create([
             'patient_id' => $patients[1]->id,
             'doctor_id' => $doctors[1]->id,
@@ -224,17 +224,17 @@ class DatabaseSeeder extends Seeder
             'bill_no' => Bill::nextBillNo(),
             'patient_id' => $patients[0]->id,
             'appointment_id' => $appointments[0]->id,
-            'subtotal' => 800,
-            'tax' => 40,
+            'subtotal' => 15000,
+            'tax' => 750,
             'discount' => 0,
-            'total' => 840,
+            'total' => 15750,
             'billed_at' => now()->subDays(3),
         ]);
         $bill1->items()->create([
             'description' => 'Consultation - Cardiology',
             'quantity' => 1, 
-            'unit_price' => 800, 
-            'amount' => 800,
+            'unit_price' => 15000, 
+            'amount' => 15000,
         ]);
 
         // Bill 2 for Appointment 2
@@ -242,17 +242,17 @@ class DatabaseSeeder extends Seeder
             'bill_no' => Bill::nextBillNo(),
             'patient_id' => $patients[1]->id,
             'appointment_id' => $appointments[1]->id,
-            'subtotal' => 600,
-            'tax' => 30,
+            'subtotal' => 10000,
+            'tax' => 500,
             'discount' => 0,
-            'total' => 630,
+            'total' => 10500,
             'billed_at' => now()->subDays(1),
         ]);
         $bill2->items()->create([
             'description' => 'Consultation - Pediatrics',
             'quantity' => 1, 
-            'unit_price' => 600, 
-            'amount' => 600,
+            'unit_price' => 10000, 
+            'amount' => 10000,
         ]);
     }
 }

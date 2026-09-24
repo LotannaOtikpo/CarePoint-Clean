@@ -4,7 +4,7 @@
 Hospital Management System is a full-stack web application for managing hospital operations such as patient registration, doctor management, appointments, admissions, medical records, prescriptions, and billing.
 
 ## Project Type
-- Backend: Laravel 11 REST API
+- Backend: Laravel 12 REST API
 - Frontend: React + Vite SPA
 - Database: MySQL
 - Authentication: Laravel Sanctum

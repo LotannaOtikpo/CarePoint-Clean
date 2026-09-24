@@ -17,7 +17,7 @@ class AdmissionController extends Controller
             ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient?->id))
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->latest('admitted_at')
-            ->paginate($request->integer('per_page', 15));
+            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
     }
 
     public function store(Request $request)
@@ -50,13 +50,19 @@ class AdmissionController extends Controller
         );
     }
 
-    public function show(Admission $admission)
+    public function show(Request $request, Admission $admission)
     {
+        $this->authorizeView($request->user(), $admission);
+
         return $admission->load(['patient', 'doctor.user:id,name']);
     }
 
     public function update(Request $request, Admission $admission)
     {
+        if ($request->user()->role === User::ROLE_DOCTOR && $admission->doctor_id !== $request->user()->doctor?->id) {
+            return response()->json(['message' => 'You can only edit your own admissions.'], 403);
+        }
+
         $data = $request->validate([
             'doctor_id' => ['sometimes', 'exists:doctors,id'],
             'ward' => ['sometimes', 'string', 'max:100'],
@@ -95,5 +101,15 @@ class AdmissionController extends Controller
         $admission->delete();
 
         return response()->json(['message' => 'Admission deleted.']);
+    }
+
+    private function authorizeView(User $user, Admission $admission): void
+    {
+        if ($user->role === User::ROLE_PATIENT && $admission->patient_id !== $user->patient?->id) {
+            abort(403);
+        }
+        if ($user->role === User::ROLE_DOCTOR && $admission->doctor_id !== $user->doctor?->id) {
+            abort(403);
+        }
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Prescription;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PrescriptionController extends Controller
 {
@@ -18,7 +19,7 @@ class PrescriptionController extends Controller
             ->when($user->role === User::ROLE_PATIENT, fn ($q) => $q->where('patient_id', $user->patient?->id))
             ->when($request->query('patient_id'), fn ($q, $id) => $q->where('patient_id', $id))
             ->latest('prescribed_date')
-            ->paginate($request->integer('per_page', 15));
+            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
     }
 
     public function store(Request $request)
@@ -47,6 +48,15 @@ class PrescriptionController extends Controller
             $data['doctor_id'] = $request->validate(['doctor_id' => ['required', 'exists:doctors,id']])['doctor_id'];
         }
 
+        if (! empty($data['medical_record_id'])) {
+            $record = \App\Models\MedicalRecord::findOrFail($data['medical_record_id']);
+            if ($record->patient_id !== (int) $data['patient_id'] || $record->doctor_id !== (int) $data['doctor_id']) {
+                throw ValidationException::withMessages([
+                    'medical_record_id' => 'The medical record must belong to the selected patient and doctor.',
+                ]);
+            }
+        }
+
         $prescription = DB::transaction(function () use ($data) {
             $prescription = Prescription::create(collect($data)->except('items')->all());
             $prescription->items()->createMany($data['items']);
@@ -61,6 +71,9 @@ class PrescriptionController extends Controller
     {
         $user = $request->user();
         if ($user->role === User::ROLE_PATIENT && $prescription->patient_id !== $user->patient?->id) {
+            abort(403);
+        }
+        if ($user->role === User::ROLE_DOCTOR && $prescription->doctor_id !== $user->doctor?->id) {
             abort(403);
         }
 
@@ -99,6 +112,11 @@ class PrescriptionController extends Controller
 
     public function destroy(Prescription $prescription)
     {
+        $user = request()->user();
+        if ($user->role === User::ROLE_DOCTOR && $prescription->doctor_id !== $user->doctor?->id) {
+            abort(403);
+        }
+
         $prescription->delete();
 
         return response()->json(['message' => 'Prescription deleted.']);

@@ -41,16 +41,30 @@ export default function Login() {
             <label htmlFor="login-email">Email address</label>
             <div className="input-shell">
               <Mail size={18} />
-              <input id="login-email" type="email" value={form.email} required autoComplete="email" placeholder="admin@carepoint.com"
-              onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <input
+                id="login-email"
+                type="email"
+                value={form.email}
+                required
+                autoComplete="off"
+                placeholder="admin@carepoint.com"
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
             </div>
           </div>
           <div className="field">
             <label htmlFor="login-password">Password</label>
             <div className="input-shell">
               <LockKeyhole size={18} />
-              <input id="login-password" type="password" value={form.password} required autoComplete="current-password" placeholder="Enter your password"
-              onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <input
+                id="login-password"
+                type="password"
+                value={form.password}
+                required
+                autoComplete="new-password"
+                placeholder="Enter your password"
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
             </div>
           </div>
           {error && <p className="error">{error}</p>}

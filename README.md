@@ -37,7 +37,7 @@ The system provides dedicated workflows for **administrators, doctors, reception
 
 The application follows a modern decoupled architecture:
 
-* 🔙 **Laravel 13** provides the RESTful backend API
+* 🔙 **Laravel 12** provides the RESTful backend API
 * ⚛️ **React + Vite** provides the frontend SPA
 * 🗄️ **MySQL** stores application data
 * 🔐 **Laravel Sanctum** handles API authentication
@@ -366,7 +366,7 @@ The project uses a decoupled frontend and backend architecture.
                               │
                               ▼
                  ┌─────────────────────────┐
-                 │     Laravel 13 API      │
+                 │     Laravel 12 API      │
                  │ Controllers / Services  │
                  │ Validation / Middleware │
                  └────────────┬────────────┘
@@ -476,7 +476,7 @@ hospital-management-system/
 | Technology         | Purpose                           |
 | ------------------ | --------------------------------- |
 | 🐘 PHP 8.2+        | Backend runtime                   |
-| 🚀 Laravel 13      | REST API framework                |
+| 🚀 Laravel 12      | REST API framework                |
 | 🔐 Laravel Sanctum | API authentication                |
 | ⚛️ React           | Frontend SPA                      |
 | ⚡ Vite             | Frontend development & build tool |
@@ -494,7 +494,7 @@ hospital-management-system/
 * PHP 8.2 or higher
 * Composer
 * MySQL 8.0 or higher
-* Laravel 13 compatible PHP extensions
+* Laravel 12 compatible PHP extensions
 
 ## Frontend
 
@@ -602,34 +602,18 @@ npm install
 
 Create the frontend environment file:
 
-## Razorpay appointment payments
+## Appointment payments
 
-Patient bookings use Razorpay Standard Checkout. Add test or live credentials to `backend/.env` (never commit them):
-
-```env
-RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
-RAZORPAY_KEY_SECRET=your_secret
-RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
-```
-
-In Razorpay, enable automatic capture and register this webhook endpoint with the `payment.captured` event:
-
-```text
-https://your-api-domain.example/api/payments/razorpay/webhook
-```
-
-Set `APP_URL` to the public backend URL so signed PDF links in receipt emails work. Configure `MAIL_*` in `backend/.env` with your SMTP provider; local development defaults to the Laravel log mailer. Then run `php artisan migrate` and `php artisan config:clear`.
-
-The server creates the Razorpay order, verifies the checkout signature and captured amount, confirms the appointment, generates a PDF receipt, and emails it to the patient. Unpaid slot reservations expire after 15 minutes.
+Appointments use pay-at-hospital billing. Booking confirms the appointment without collecting online payment; staff can record payment later from the Billing screen.
 
 ## Demo accounts (password: `password`)
 
 | Role         | Email               |
 |--------------|---------------------|
-| Admin        | admin@hms.test      |
-| Doctor       | anil@hms.test       |
-| Receptionist | reception@hms.test  |
-| Patient      | patient@hms.test    |
+| Admin        | admin@carepoint.com |
+| Doctor       | chukwuma.okafor@carepoint.com |
+| Receptionist | receptionist@carepoint.com   |
+| Patient      | emeka.okafor@gmail.com        |
 
 New patients can also self-register from the login page.
 
@@ -651,15 +635,12 @@ CRUD /api/medical-records /api/prescriptions /api/bills /api/users
 PUT  /api/doctors/{id}/availability
 POST /api/admissions/{id}/discharge
 POST /api/bills/{id}/pay | /api/bills/{id}/cancel
-POST /api/appointment-payments/order
-POST /api/appointment-payments/{id}/verify | /api/appointment-payments/{id}/cancel
-POST /api/payments/razorpay/webhook
 ```
 
 Configure the API URL:
 
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://carepoint.test/api
 ```
 
 Start the React development server:
@@ -681,7 +662,7 @@ http://localhost:5173
 | Application       | URL                     |
 | ----------------- | ----------------------- |
 | ⚛️ React Frontend | `http://localhost:5173` |
-| 🚀 Laravel API    | `http://localhost:8000` |
+| 🚀 Laravel API    | `http://carepoint.test/api` |
 
 ---
 
@@ -769,7 +750,7 @@ The application uses Laravel's authentication and authorization features to prot
 
 ### Backend API
 
-The backend is built as a RESTful API using Laravel 13.
+The backend is built as a RESTful API using Laravel 12.
 
 The frontend communicates with the backend through HTTP requests and JSON responses.
 
@@ -778,7 +759,7 @@ The frontend communicates with the backend through HTTP requests and JSON respon
 The API endpoint is configured using:
 
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://carepoint.test/api
 ```
 
 For production, replace the development URL with your deployed Laravel API URL.
@@ -787,7 +768,6 @@ For production, replace the development URL with your deployed Laravel API URL.
 
 # 🚀 Future Enhancements
 
-* [ ] Online payment gateway integration
 * [ ] Email notifications
 * [ ] SMS appointment reminders
 * [ ] Doctor availability calendar
@@ -823,7 +803,7 @@ The system can be adapted for:
 # 📈 Project Highlights
 
 ```text
-🚀 Laravel 13 REST API
+🚀 Laravel 12 REST API
 ⚛️ React + Vite SPA
 🔐 Laravel Sanctum Authentication
 👥 Role-Based Access Control

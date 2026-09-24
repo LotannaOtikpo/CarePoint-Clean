@@ -146,10 +146,10 @@ export default function Layout() {
 
           <div className="topbar-actions">
             <ThemeToggle />
-            <div className="system-status" title="Workspace status">
+            {/* <div className="system-status" title="Workspace status">
               <span className="status-dot" />
               <span>System ready</span>
-            </div>
+            </div> */}
             <div className="user-chip">
               <span className="avatar">{initials(user?.name)}</span>
               <span className="user-copy">

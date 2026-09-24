@@ -29,7 +29,7 @@ class AppointmentController extends Controller
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->when($request->query('date'), fn ($q, $d) => $q->whereDate('appointment_date', $d))
             ->orderBy('appointment_date')->orderBy('appointment_time')
-            ->paginate($request->integer('per_page', 15));
+            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
     }
 
     public function store(Request $request)

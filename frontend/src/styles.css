@@ -2077,8 +2077,17 @@ td .btn + .btn {
   display: inline-block;
 }
 
-/* Forces inline-styled or dynamic loaders to white */
+/* Spinner color adaptation for light and dark modes */
+:root {
+  --spinner-color: #000000; /* Black in light mode */
+}
+
+[data-theme="dark"] {
+  --spinner-color: #ffffff; /* White in dark mode */
+}
+
 div[style*="color: rgb(14, 165, 164)"],
-div[style*="color: #0ea5a4"] {
-  color: #ffffff !important;
+div[style*="color: #0ea5a4"],
+.animate-spin {
+  color: var(--spinner-color) !important;
 }
