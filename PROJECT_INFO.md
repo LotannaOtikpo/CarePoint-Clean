@@ -31,7 +31,7 @@ Hospital Management System is a full-stack web application for managing hospital
 - MySQL 8.0 or higher
 
 ### Frontend
-- Node.js 18 or higher
+- Node.js 20.19+ or 22.12+
 - npm
 
 ## Environment Requirements

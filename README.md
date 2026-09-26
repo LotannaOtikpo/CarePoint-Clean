@@ -1,7 +1,7 @@
 # 🏥 Hospital Management System (HMS)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Laravel-13-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel">
+  <img src="https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel">
   <img src="https://img.shields.io/badge/React-18%2B-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
   <img src="https://img.shields.io/badge/Vite-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
   <img src="https://img.shields.io/badge/MySQL-8.0%2B-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
@@ -498,7 +498,7 @@ hospital-management-system/
 
 ## Frontend
 
-* Node.js 18 or higher
+* Node.js 20.19+ or 22.12+
 * npm
 
 ---
@@ -600,13 +600,21 @@ Install npm dependencies:
 npm install
 ```
 
-Create the frontend environment file:
+Create `frontend/.env` if you want Vite to call the Laragon API host directly. The Vite proxy is used when `VITE_API_URL` is empty:
+
+```env
+VITE_API_URL=https://carepoint.test/api
+```
+
+Copy `frontend/.env.example` to `frontend/.env` and set the API URL for your local setup.
 
 ## Appointment payments
 
 Appointments use pay-at-hospital billing. Booking confirms the appointment without collecting online payment; staff can record payment later from the Billing screen.
 
-## Demo accounts (password: `password`)
+## Demo accounts
+
+These accounts are created only by the local/test database seeder. The admin password is `carepoint123`; the other demo account passwords are `password`. Never use these accounts or seeded data in production.
 
 | Role         | Email               |
 |--------------|---------------------|
@@ -663,6 +671,23 @@ http://localhost:5173
 | ----------------- | ----------------------- |
 | ⚛️ React Frontend | `http://localhost:5173` |
 | 🚀 Laravel API    | `http://carepoint.test/api` |
+
+---
+
+# Production Deployment
+
+Deploy the Laravel API and the built React app over HTTPS. The frontend can be on a separate host; set `VITE_API_URL` to the public API URL at build time and set `CORS_ALLOWED_ORIGINS` on the API to the exact frontend origin(s). For same-origin deployments, leave `VITE_API_URL` empty so the app uses `/api`, and configure the web server to serve the frontend build, send unknown frontend routes to `index.html`, and route `/api` to Laravel. Set `FRONTEND_URL` to the public frontend base URL so the Laravel root redirects to its login screen.
+
+## Release Checklist
+
+1. Configure the production environment from `backend/.env.example`. Set `APP_ENV=production`, `APP_DEBUG=false`, a unique `APP_KEY` (generate it with `php artisan key:generate`), HTTPS `APP_URL` and `FRONTEND_URL`, database credentials, `SANCTUM_EXPIRATION`, and allowed frontend origins. Keep `.env` and all secrets outside version control.
+2. Install backend dependencies with `composer install --no-dev --optimize-autoloader` from `backend/`.
+3. Build the frontend with `npm ci` and `npm run build` from `frontend/`. The default production API URL is same-origin (`/api`); provide `VITE_API_URL` at build time when frontend and API are on separate origins. The ignored local `frontend/.env` is for Vite development and is not used to override the production-mode default.
+4. Point the web server document root at Laravel's `backend/public` for the API. For a separate frontend host, publish `frontend/dist` and enable SPA fallback rewrites. Use HTTPS and ensure `backend/storage` and `backend/bootstrap/cache` are writable by the PHP process.
+5. Back up the production database, then run `php artisan migrate --force` from `backend/`. Do not run `db:seed` or `migrate --seed` in production; the demo seeder intentionally refuses non-local/non-test environments.
+6. Run `php artisan optimize:clear` before deploying changed routes or configuration, then `php artisan optimize` after deployment. Monitor Laravel logs, configure database backups, and rehearse restore procedures.
+
+The API exposes Laravel's `/up` health endpoint. Verify it, the login endpoint's rate limit, frontend deep-link refreshes, and the production CORS preflight from the actual hosting environment before opening access to users.
 
 ---
 

@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => response()->json([
-    'app' => 'Hospital Management System API',
-    'status' => 'running',
-]));
+Route::get('/', fn () => redirect()->away(
+    rtrim(config('app.frontend_url'), '/') . '/login'
+));

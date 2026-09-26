@@ -16,7 +16,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // ---- Staff accounts (password for all demo users: "password") ----
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException('Demo data may only be seeded in local or testing environments.');
+        }
+
+        // ---- Demo staff accounts ----
         User::create([
             'name' => 'System Admin',
             'email' => 'admin@carepoint.com',
